@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareerPulse - Smart Job Seeker Profile Builder</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            gov: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Header Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-briefcase text-lg"></i>
+        </div>
+        <div>
+          <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-brand-600 to-indigo-900 bg-clip-text text-transparent">CareerPulse</span>
+          <span class="text-xs text-slate-500 block font-medium -mt-1">Dual-Track Profile Hub</span>
+        </div>
+      </div>
+
+      <!-- Steps Indicator (Desktop) -->
+      <nav id="stepIndicatorNav" class="hidden md:flex items-center gap-2 text-sm font-medium">
+        <button onclick="switchStep(1)" id="stepBtn-1" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-brand-600 bg-brand-50 font-semibold transition">
+          <span class="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">1</span>
+          Basic Info
+        </button>
+        <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+        <button onclick="switchStep(2)" id="stepBtn-2" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition">
+          <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">2</span>
+          Track & Specifics
+        </button>
+        <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+        <button onclick="switchStep(3)" id="stepBtn-3" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition">
+          <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">3</span>
+          Review & Export
+        </button>
+        <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+        <button onclick="switchStep(4)" id="stepBtn-4" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition">
+          <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">4</span>
+          Smart Job Matcher
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2">
+        <button onclick="exportProfileJSON()" class="px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-download text-brand-600"></i> Backup JSON
+        </button>
+        <button onclick="triggerImportJSON()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-300 hover:bg-slate-50 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-file-import text-slate-400"></i> Import JSON
+        </button>
+        <input type="file" id="jsonFileInput" onchange="importProfileJSON(event)" class="hidden" accept=".json">
+        <button onclick="resetProfile()" class="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition">
+          Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- LEFT / MAIN FORM SECTION (7 cols) -->
+      <section class="lg:col-span-7 flex flex-col gap-6">
+
+        <!-- Progress Bar (Mobile & Desktop) -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-2">
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-500">
+            <span id="stepProgressLabel">Step 1 of 3: General Candidate Profile</span>
+            <span id="stepPercentText">33% Completed</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div id="progressBar" class="bg-gradient-to-r from-brand-600 to-indigo-500 h-2.5 rounded-full transition-all duration-300 w-1/3"></div>
+          </div>
+        </div>
+
+        <!-- FORM STEPS WRAPPER -->
+        <form id="profileForm" onsubmit="event.preventDefault();" oninput="autoSaveProfileData()" class="space-y-6">
+
+          <!-- ================= STEP 1: BASIC ACADEMIC & PERSONAL DETAILS ================= -->
+          <div id="step-1" class="step-content space-y-6 fade-in">
+            
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+                  <i class="fa-solid fa-user-gear"></i>
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-slate-800">Basic Contact & Identity</h2>
+                  <p class="text-xs text-slate-500">Essential contact details for recruiters and verification portals.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Full Name *</label>
+                  <input type="text" id="fullName" oninput="updateLivePreview()" placeholder="e.g. Rahul Sharma" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Email Address *</label>
+                  <input type="email" id="email" oninput="updateLivePreview()" placeholder="rahul@example.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Mobile Number *</label>
+                  <input type="tel" id="mobile" oninput="updateLivePreview()" placeholder="+91 98765 43210" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-slate-800">Academic Background</h2>
+                  <p class="text-xs text-slate-500">Degree, passout year, and aggregate scores.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Highest Qualification *</label>
+                  <select id="qualification" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                    <option value="">Select Degree</option>
+                    <option value="B.Tech / B.E.">B.Tech / B.E.</option>
+                    <option value="M.Tech / M.E.">M.Tech / M.E.</option>
+                    <option value="B.Sc / M.Sc">B.Sc / M.Sc</option>
+                    <option value="BCA / MCA">BCA / MCA</option>
+                    <option value="B.Com / M.Com">B.Com / M.Com</option>
+                    <option value="BBA / MBA">BBA / MBA</option>
+                    <option value="Diploma / ITI">Diploma / ITI</option>
+                    <option value="12th Standard / Intermediate">12th Standard / Intermediate</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Branch / Specialization</label>
+                  <input type="text" id="specialization" oninput="updateLivePreview()" placeholder="Computer Science, ECE, Finance..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Passout Year *</label>
+                  <select id="passoutYear" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                    <option value="">Select Year</option>
+                    <script>
+                      const currentYear = new Date().getFullYear();
+                      for(let y = currentYear + 2; y >= 2010; y--) {
+                        document.write(`<option value="${y}">${y}</option>`);
+                      }
+                    </script>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Aggregate Score (% or CGPA)</label>
+                  <input type="text" id="aggregateScore" oninput="updateLivePreview()" placeholder="8.4 CGPA or 78%" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Key Technical / Core Skills</label>
+                  <input type="text" id="skillsInput" oninput="updateLivePreview()" placeholder="Comma separated (e.g. Python, SQL, React, Data Entry, Tally)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                  <span class="text-[11px] text-slate-400 mt-1 block">Separate skills with commas to turn them into tags.</span>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Work Experience Status *</label>
+                  <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                      <input type="radio" name="expStatus" value="Fresher" checked onchange="toggleExperienceFields(); updateLivePreview();" class="text-brand-600 focus:ring-brand-500">
+                      <div>
+                        <span class="block text-sm font-semibold text-slate-800">Fresher</span>
+                        <span class="block text-[11px] text-slate-500">0 - 1 year / Student</span>
+                      </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                      <input type="radio" name="expStatus" value="Experienced" onchange="toggleExperienceFields(); updateLivePreview();" class="text-brand-600 focus:ring-brand-500">
+                      <div>
+                        <span class="block text-sm font-semibold text-slate-800">Experienced</span>
+                        <span class="block text-[11px] text-slate-500">1+ Years Work Ex</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Conditional Experience Details -->
+                <div id="experienceDetailsGroup" class="hidden sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Total Experience (Years)</label>
+                    <input type="number" step="0.5" id="yearsExp" oninput="updateLivePreview()" placeholder="e.g. 2.5" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Current/Last Company</label>
+                    <input type="text" id="lastCompany" oninput="updateLivePreview()" placeholder="Company name" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="flex justify-end">
+              <button type="button" onclick="switchStep(2)" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm transition shadow-lg shadow-brand-500/20 flex items-center gap-2">
+                Continue to Track Selection <i class="fa-solid fa-arrow-right text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- ================= STEP 2: DYNAMIC TRACK SELECTION & SPECIFICS ================= -->
+          <div id="step-2" class="step-content space-y-6 hidden fade-in">
+            
+            <!-- Track Switcher Header -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-3">Choose Primary Career Track *</label>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Private Track Option -->
+                <button type="button" onclick="setTrack('private')" id="trackBtn-private" class="p-4 rounded-xl border-2 text-left transition flex items-start gap-3 border-brand-600 bg-brand-50/50 shadow-sm">
+                  <div class="w-10 h-10 rounded-lg bg-brand-600 text-white flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-building-user text-base"></i>
+                  </div>
+                  <div>
+                    <span class="block font-bold text-slate-900 text-base">Private Sector Jobs</span>
+                    <span class="block text-xs text-slate-500 mt-0.5">Corporate, IT, MNCs, Startups, Service Agreements, & Compensation preferences.</span>
+                  </div>
+                </button>
+
+                <!-- Government Track Option -->
+                <button type="button" onclick="setTrack('government')" id="trackBtn-government" class="p-4 rounded-xl border-2 text-left transition flex items-start gap-3 border-slate-200 hover:border-slate-300">
+                  <div class="w-10 h-10 rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-landmark text-base"></i>
+                  </div>
+                  <div>
+                    <span class="block font-bold text-slate-900 text-base">Government Exams</span>
+                    <span class="block text-xs text-slate-500 mt-0.5">Central/State notifications, Reservation categories, Age relaxation & Domicile requirements.</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- PRIVATE TRACK FORM CONTAINER -->
+            <div id="privateTrackFields" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5 fade-in">
+              <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-sliders"></i>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold text-slate-800">Private Sector Preferences</h2>
+                    <p class="text-xs text-slate-500">Notice period, salary expectations, & work modes.</p>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold">Private Track</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Work Location Preference</label>
+                  <select id="workPreference" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                    <option value="Hybrid Preference">Hybrid (Office + Remote)</option>
+                    <option value="Remote / WFH">Work From Home (Remote)</option>
+                    <option value="On-Site / In-Office">On-Site / In-Office Only</option>
+                    <option value="Open to All Modes">Open to Any Mode</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Target Expected Salary (LPA)</label>
+                  <input type="text" id="expectedCtc" oninput="updateLivePreview()" placeholder="e.g. 6.5 LPA or Negotiable" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Preferred Job Roles</label>
+                  <input type="text" id="targetRoles" oninput="updateLivePreview()" placeholder="e.g. Software Engineer, QA Analyst, Data Associate, HR Ops" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Notice Period</label>
+                  <select id="noticePeriod" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                    <option value="Immediate Joiner">Immediate Joiner (0 days)</option>
+                    <option value="15 Days or Less">15 Days or Less</option>
+                    <option value="30 Days">1 Month (30 Days)</option>
+                    <option value="60 Days">2 Months (60 Days)</option>
+                    <option value="90 Days">3 Months (90 Days)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Willing to Sign Bond/Service Agreement?</label>
+                  <select id="bondWillingness" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                    <option value="Yes (Up to 1 Year)">Yes (Up to 1 Year)</option>
+                    <option value="Yes (Up to 2 Years)">Yes (Up to 2 Years)</option>
+                    <option value="No Bonds">Strictly No Service Bonds</option>
+                    <option value="Depends on Offer">Depends on Offer & Terms</option>
+                  </select>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Portfolio / LinkedIn / GitHub URL</label>
+                  <input type="url" id="portfolioUrl" oninput="updateLivePreview()" placeholder="https://linkedin.com/in/username or github link" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+
+              </div>
+            </div>
+
+            <!-- GOVERNMENT TRACK FORM CONTAINER -->
+            <div id="governmentTrackFields" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5 hidden fade-in">
+              <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-id-card"></i>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold text-slate-800">Government Exam Criteria</h2>
+                    <p class="text-xs text-slate-500">Crucial variables for age eligibility & quota reservations.</p>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-gov-100 text-gov-700 text-xs font-semibold">Govt Track</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Reservation Category *</label>
+                  <select id="govCategory" onchange="calculateGovEligibility(); updateLivePreview();" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm font-medium">
+                    <option value="OC / Unreserved (UR)">OC / General (Unreserved)</option>
+                    <option value="EWS (Economically Weaker)">EWS (Economically Weaker Section)</option>
+                    <option value="OBC (Non-Creamy Layer)">OBC (Non-Creamy Layer)</option>
+                    <option value="SC (Scheduled Caste)">SC (Scheduled Caste)</option>
+                    <option value="ST (Scheduled Tribe)">ST (Scheduled Tribe)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Gender *</label>
+                  <select id="gender" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Transgender / Other">Transgender / Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Date of Birth (Exact) *</label>
+                  <input type="date" id="dobInput" onchange="calculateGovEligibility(); updateLivePreview();" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Age As Of Cut-off Date *</label>
+                  <input type="date" id="cutoffDateInput" onchange="calculateGovEligibility(); updateLivePreview();" class="w-full px-3.5 py-2.5 bg-amber-50/50 border border-amber-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm font-medium">
+                  <span class="text-[11px] text-amber-700 mt-1 block">Set notification cut-off date (e.g. 01-01-2026 or Today)</span>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Native State / Domicile *</label>
+                  <select id="nativeState" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm">
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Delhi / NCR">Delhi / NCR</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Other State / UT">Other State / UT</option>
+                  </select>
+                </div>
+
+                <!-- ADVANCED AGE CALCULATOR BREAKDOWN CARD -->
+                <div class="sm:col-span-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+                  <div class="flex items-center justify-between border-b border-amber-200/60 pb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-2">
+                      <i class="fa-solid fa-calculator text-amber-600"></i> Cut-off Age Breakdown
+                    </span>
+                    <span id="cutoffDateBadge" class="text-[11px] font-semibold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-md">As of: --</span>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1">
+                    <div class="bg-white/80 p-2.5 rounded-xl border border-amber-200/50 text-center">
+                      <span class="block text-[10px] text-slate-500 font-semibold uppercase">Exact Age</span>
+                      <span id="calculatedAgeExactText" class="block text-sm font-extrabold text-amber-900">-- Y, -- M, -- D</span>
+                    </div>
+                    <div class="bg-white/80 p-2.5 rounded-xl border border-amber-200/50 text-center">
+                      <span class="block text-[10px] text-slate-500 font-semibold uppercase">Upper Age Limit</span>
+                      <span id="categoryMaxAgeText" class="block text-sm font-extrabold text-slate-800">30 Years (OC)</span>
+                    </div>
+                    <div class="bg-white/80 p-2.5 rounded-xl border border-amber-200/50 text-center">
+                      <span class="block text-[10px] text-slate-500 font-semibold uppercase">Relaxation</span>
+                      <span id="relaxationBadgeText" class="block text-sm font-extrabold text-emerald-700">0 Years</span>
+                    </div>
+                  </div>
+
+                  <p id="ageRelaxationInfo" class="text-xs text-amber-800 font-medium mt-1">Select Date of Birth to calculate exact eligibility.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Person with Benchmark Disability (PwD)?</label>
+                  <select id="pwdStatus" onchange="calculateGovEligibility(); updateLivePreview();" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm">
+                    <option value="No">No</option>
+                    <option value="Yes (OH - Orthopedically Handicapped)">Yes (OH - Orthopedically Handicapped)</option>
+                    <option value="Yes (HH - Hearing Handicapped)">Yes (HH - Hearing Handicapped)</option>
+                    <option value="Yes (VH - Visually Handicapped)">Yes (VH - Visually Handicapped)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Ex-Serviceman Status</label>
+                  <select id="exServiceman" onchange="updateLivePreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm">
+                    <option value="No">No</option>
+                    <option value="Yes (Armed Forces Retired)">Yes (Armed Forces Retired)</option>
+                  </select>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Regional Language Fluency (Read & Write)</label>
+                  <input type="text" id="languageProficiency" oninput="updateLivePreview()" placeholder="e.g. Telugu, English, Hindi" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gov-500/20 focus:border-gov-500 outline-none transition text-sm">
+                </div>
+
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+              <button type="button" onclick="switchStep(1)" class="px-5 py-2.5 text-slate-600 hover:text-slate-900 font-medium text-sm transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Back
+              </button>
+              <button type="button" onclick="switchStep(3)" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm transition shadow-lg shadow-brand-500/20 flex items-center gap-2">
+                Review Profile <i class="fa-solid fa-arrow-right text-xs"></i>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- ================= STEP 3: REVIEW & EXPORT ================= -->
+          <div id="step-3" class="step-content space-y-6 hidden fade-in">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-slate-900">Profile Saved & Ready for Deployment</h2>
+                  <p class="text-xs text-slate-500">Your profile is automatically saved locally. Use options below to copy or backup.</p>
+                </div>
+              </div>
+
+              <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-2">
+                <div class="flex justify-between border-b border-slate-200 pb-2">
+                  <span class="font-medium text-slate-500">Active Profile Track:</span>
+                  <span id="reviewTrackLabel" class="font-bold text-brand-600">Private Sector</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200 pb-2">
+                  <span class="font-medium text-slate-500">Candidate Name:</span>
+                  <span id="reviewNameLabel" class="font-bold text-slate-800">Not Specified</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="font-medium text-slate-500">Education & Year:</span>
+                  <span id="reviewEduLabel" class="font-bold text-slate-800">--</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <button type="button" onclick="saveProfileToStorage()" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-floppy-disk"></i> Force Save Profile
+                </button>
+                <button type="button" onclick="copyProfileSummaryText()" class="py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold text-xs transition shadow-md shadow-slate-800/20 flex items-center justify-center gap-2">
+                  <i class="fa-regular fa-copy"></i> Copy Resume Text
+                </button>
+                <button type="button" onclick="exportProfileJSON()" class="py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-xs transition shadow-md shadow-brand-600/20 flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-file-arrow-down"></i> Export JSON Backup
+                </button>
+              </div>
+            </div>
+
+            <!-- Application Readiness Checklist -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-brand-600"></i> Document Readiness Checklist
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                <label class="flex items-center gap-2.5 p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                  <input type="checkbox" id="chkDegree" onchange="autoSaveProfileData()" class="rounded text-brand-600 focus:ring-brand-500">
+                  <span class="text-slate-700 font-medium">Degree Marks Memos / Provisional Certificate</span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                  <input type="checkbox" id="chkCaste" onchange="autoSaveProfileData()" class="rounded text-brand-600 focus:ring-brand-500">
+                  <span class="text-slate-700 font-medium">Community / Caste / EWS Certificate</span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                  <input type="checkbox" id="chkDomicile" onchange="autoSaveProfileData()" class="rounded text-brand-600 focus:ring-brand-500">
+                  <span class="text-slate-700 font-medium">Native Domicile / Residence Proof</span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                  <input type="checkbox" id="chkPhoto" onchange="autoSaveProfileData()" class="rounded text-brand-600 focus:ring-brand-500">
+                  <span class="text-slate-700 font-medium">Passport Photo & Signature Digital Scans</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <button type="button" onclick="switchStep(2)" class="px-5 py-2.5 text-slate-600 hover:text-slate-900 font-medium text-sm transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Back to Editing
+              </button>
+              <button type="button" onclick="switchStep(4)" class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-sm transition shadow-lg shadow-purple-500/20 flex items-center gap-2">
+                Run Smart Job Matcher <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- ================= STEP 4: SMART JOB MATCHING & NOTIFICATION RADAR ================= -->
+          <div id="step-4" class="step-content space-y-6 hidden fade-in">
+            
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg font-bold">
+                    <i class="fa-solid fa-compass font-bold"></i>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold text-slate-900">Smart Job & Exam Matcher</h2>
+                    <p class="text-xs text-slate-500">Evaluates your saved profile against upcoming notifications & openings.</p>
+                  </div>
+                </div>
+
+                <button type="button" onclick="runSmartJobScanner()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 shadow-sm">
+                  <i class="fa-solid fa-rotate text-xs"></i> Re-Scan Opportunities
+                </button>
+              </div>
+
+              <!-- Filter Selector -->
+              <div class="flex gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="filterMatches('all')" id="matchTab-all" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-100 text-purple-700">All Results</button>
+                <button type="button" onclick="filterMatches('eligible')" id="matchTab-eligible" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">100% Eligible</button>
+                <button type="button" onclick="filterMatches('partial')" id="matchTab-partial" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">High Match</button>
+              </div>
+            </div>
+
+            <!-- DYNAMIC MATCH CARDS CONTAINER -->
+            <div id="matchesContainer" class="space-y-4">
+              <!-- Cards rendered dynamically via JS -->
+            </div>
+
+            <div class="flex justify-start pt-2">
+              <button type="button" onclick="switchStep(3)" class="px-5 py-2.5 text-slate-600 hover:text-slate-900 font-medium text-sm transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Back to Review
+              </button>
+            </div>
+
+          </div>
+
+        </form>
+      </section>
+
+      <!-- RIGHT / LIVE INTERACTIVE PREVIEW CARD (5 cols) -->
+      <section class="lg:col-span-5">
+        <div class="sticky top-24 space-y-4">
+
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Profile Preview Card
+            </h3>
+            <span id="badgeTrackIndicator" class="text-[11px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700">
+              Private Sector
+            </span>
+          </div>
+
+          <!-- THE PREVIEW CARD -->
+          <div id="previewCard" class="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden transition-all duration-300">
+            
+            <!-- Card Header -->
+            <div id="previewCardHeader" class="bg-gradient-to-r from-slate-900 to-indigo-950 p-6 text-white relative">
+              <div class="flex items-start justify-between">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <h4 id="pvName" class="text-xl font-bold tracking-tight">John Doe</h4>
+                  </div>
+                  <p id="pvQualification" class="text-xs text-indigo-200 font-medium">B.Tech - Computer Science</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white text-xl font-bold shadow-inner">
+                  <span id="pvAvatarInitials">JD</span>
+                </div>
+              </div>
+
+              <!-- Badges Container -->
+              <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
+                <span id="pvExpBadge" class="bg-white/15 px-2.5 py-1 rounded-md backdrop-blur-sm border border-white/10 text-white font-medium flex items-center gap-1">
+                  <i class="fa-solid fa-briefcase text-[10px]"></i> <span id="pvExpText">Fresher</span>
+                </span>
+                <span id="pvPassoutBadge" class="bg-white/15 px-2.5 py-1 rounded-md backdrop-blur-sm border border-white/10 text-white font-medium flex items-center gap-1">
+                  <i class="fa-solid fa-calendar-check text-[10px]"></i> <span id="pvPassoutText">2024 Passout</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Card Body Content -->
+            <div class="p-6 space-y-5 bg-white">
+              
+              <!-- Contact Details -->
+              <div class="space-y-2 text-xs border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2.5 text-slate-600">
+                  <i class="fa-regular fa-envelope text-slate-400 w-4 text-center"></i>
+                  <span id="pvEmail" class="truncate">email@domain.com</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-slate-600">
+                  <i class="fa-solid fa-phone text-slate-400 w-4 text-center"></i>
+                  <span id="pvMobile">+91 XXXXX XXXXX</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-slate-600">
+                  <i class="fa-solid fa-chart-line text-slate-400 w-4 text-center"></i>
+                  <span id="pvScore">Score: 80%</span>
+                </div>
+              </div>
+
+              <!-- Skills Tags -->
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Technical / Key Skills</span>
+                <div id="pvSkillsContainer" class="flex flex-wrap gap-1.5">
+                  <span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium">Add skills...</span>
+                </div>
+              </div>
+
+              <!-- TRACK SPECIFIC DYNAMIC PREVIEW BLOCK -->
+              
+              <!-- Private Track Dynamic Preview -->
+              <div id="pvPrivateBlock" class="p-4 rounded-2xl bg-brand-50/50 border border-brand-100 space-y-3 fade-in">
+                <div class="flex items-center justify-between text-xs border-b border-brand-100/60 pb-2">
+                  <span class="font-bold text-brand-900">Work Mode</span>
+                  <span id="pvWorkPref" class="font-semibold text-brand-700">Hybrid</span>
+                </div>
+                <div class="flex items-center justify-between text-xs border-b border-brand-100/60 pb-2">
+                  <span class="font-bold text-brand-900">Target CTC</span>
+                  <span id="pvCtc" class="font-semibold text-brand-700">Negotiable</span>
+                </div>
+                <div class="flex items-center justify-between text-xs border-b border-brand-100/60 pb-2">
+                  <span class="font-bold text-brand-900">Notice Period</span>
+                  <span id="pvNotice" class="font-semibold text-brand-700">Immediate</span>
+                </div>
+                <div class="text-xs">
+                  <span class="font-bold text-brand-900 block mb-1">Target Roles:</span>
+                  <span id="pvRoles" class="text-slate-700">Software Engineer, Support</span>
+                </div>
+              </div>
+
+              <!-- Government Track Dynamic Preview -->
+              <div id="pvGovBlock" class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-3 hidden fade-in">
+                <div class="flex items-center justify-between text-xs border-b border-amber-200/50 pb-2">
+                  <span class="font-bold text-amber-900">Category Quota</span>
+                  <span id="pvCategory" class="font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">OC / General</span>
+                </div>
+                <div class="flex items-center justify-between text-xs border-b border-amber-200/50 pb-2">
+                  <span class="font-bold text-amber-900">Exact Cut-off Age</span>
+                  <span id="pvExactAgeCard" class="font-bold text-amber-900 bg-amber-200/50 px-2 py-0.5 rounded text-[11px]">--</span>
+                </div>
+                <div class="flex items-center justify-between text-xs border-b border-amber-200/50 pb-2">
+                  <span class="font-bold text-amber-900">Gender & DOB</span>
+                  <span id="pvGovGenderDob" class="font-semibold text-amber-800">Male | --</span>
+                </div>
+                <div class="flex items-center justify-between text-xs border-b border-amber-200/50 pb-2">
+                  <span class="font-bold text-amber-900">Domicile State</span>
+                  <span id="pvState" class="font-semibold text-amber-800">Andhra Pradesh</span>
+                </div>
+                <div class="text-xs space-y-1">
+                  <div class="flex justify-between">
+                    <span class="text-amber-900 font-bold">Languages:</span>
+                    <span id="pvGovLanguages" class="text-slate-700 font-medium">English</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-amber-900 font-bold">PwD Status:</span>
+                    <span id="pvGovPwd" class="text-slate-700 font-medium">No</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Card Footer -->
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+              <span>CareerPulse Profile Id: #CP-<span id="pvRandomId">8942</span></span>
+              <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check text-[9px]"></i> Ready</span>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+      CareerPulse Job Seeker System &copy; 2026. Tailored profile builder for Private Recruiters & Government Notifications.
+    </div>
+  </footer>
+
+  <!-- Application Logic JavaScript -->
+  <script>
+    // State Variables
+    let currentStep = 1;
+    let selectedTrack = 'private'; // 'private' or 'government'
+
+    // Track Navigation Switcher
+    function setTrack(track) {
+      selectedTrack = track;
+      const privateBtn = document.getElementById('trackBtn-private');
+      const govBtn = document.getElementById('trackBtn-government');
+      const privateFields = document.getElementById('privateTrackFields');
+      const govFields = document.getElementById('governmentTrackFields');
+      const pvPrivateBlock = document.getElementById('pvPrivateBlock');
+      const pvGovBlock = document.getElementById('pvGovBlock');
+      const badgeIndicator = document.getElementById('badgeTrackIndicator');
+      const reviewTrackLabel = document.getElementById('reviewTrackLabel');
+      const previewHeader = document.getElementById('previewCardHeader');
+
+      if (track === 'private') {
+        privateBtn.className = "p-4 rounded-xl border-2 text-left transition flex items-start gap-3 border-brand-600 bg-brand-50/50 shadow-sm";
+        govBtn.className = "p-4 rounded-xl border-2 text-left transition flex items-start gap-3 border-slate-200 hover:border-slate-300";
+        privateFields.classList.remove('hidden');
+        govFields.classList.add('hidden');
+        pvPrivateBlock.classList.remove('hidden');
+        pvGovBlock.classList.add('hidden');
+        badgeIndicator.innerText = "Private Sector";
+        badgeIndicator.className = "text-[11px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700";
+        reviewTrackLabel.innerText = "Private Sector";
+        reviewTrackLabel.className = "font-bold text-brand-600";
+        previewHeader.className = "bg-gradient-to-r from-slate-900 to-indigo-950 p-6 text-white relative";
+      } else {
+        govBtn.className = "p-4 rounded-xl border-2 text-left transition flex items-start gap-3 border-gov-600 bg-gov-50/50 shadow-sm";
+        privateBtn.className = "p-4 rounded-xl border-2 text-left transition flex items-start gap-3 border-slate-200 hover:border-slate-300";
+        govFields.classList.remove('hidden');
+        privateFields.classList.add('hidden');
+        pvGovBlock.classList.remove('hidden');
+        pvPrivateBlock.classList.add('hidden');
+        badgeIndicator.innerText = "Govt Exams";
+        badgeIndicator.className = "text-[11px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full bg-gov-100 text-gov-700";
+        reviewTrackLabel.innerText = "Government Exams";
+        reviewTrackLabel.className = "font-bold text-gov-600";
+        previewHeader.className = "bg-gradient-to-r from-slate-900 to-amber-950 p-6 text-white relative";
+      }
+      updateLivePreview();
+      autoSaveProfileData();
+    }
+
+    // Toggle Conditional Work Experience Input Fields
+    function toggleExperienceFields() {
+      const expStatus = document.querySelector('input[name="expStatus"]:checked').value;
+      const group = document.getElementById('experienceDetailsGroup');
+      if (expStatus === 'Experienced') {
+        group.classList.remove('hidden');
+      } else {
+        group.classList.add('hidden');
+      }
+    }
+
+    // Switch Wizard Steps
+    function switchStep(stepNum) {
+      currentStep = stepNum;
+
+      // Hide all step contents
+      document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`step-${stepNum}`).classList.remove('hidden');
+
+      // Update Nav Buttons
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`stepBtn-${i}`);
+        if (i === stepNum) {
+          btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-lg text-brand-600 bg-brand-50 font-semibold transition";
+        } else {
+          btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition";
+        }
+      }
+
+      // Update Progress Bar
+      const progressBar = document.getElementById('progressBar');
+      const progressLabel = document.getElementById('stepProgressLabel');
+      const percentText = document.getElementById('stepPercentText');
+
+      if (stepNum === 1) {
+        progressBar.style.width = '25%';
+        progressLabel.innerText = 'Step 1 of 4: Basic Profile Details';
+        percentText.innerText = '25% Completed';
+      } else if (stepNum === 2) {
+        progressBar.style.width = '50%';
+        progressLabel.innerText = 'Step 2 of 4: Career Track Specifics';
+        percentText.innerText = '50% Completed';
+      } else if (stepNum === 3) {
+        progressBar.style.width = '75%';
+        progressLabel.innerText = 'Step 3 of 4: Profile Review & Export';
+        percentText.innerText = '75% Completed';
+      } else if (stepNum === 4) {
+        progressBar.style.width = '100%';
+        progressLabel.innerText = 'Step 4 of 4: Smart Job Matching Engine';
+        percentText.innerText = '100% Completed';
+        runSmartJobScanner(); // Auto-scan on entering step 4
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Auto-Save Handler for Continuous Input
+    function autoSaveProfileData() {
+      saveProfileToStorage(true);
+    }
+
+    // Updated Mock Database for Smart Matching Engine with live deadlines & statuses
+    const mockGovNotifications = [
+      {
+        id: 'GOV-101',
+        title: 'SSC Combined Graduate Level (CGL) 2026',
+        org: 'Staff Selection Commission (Govt of India)',
+        minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA'],
+        maxAgeLimit: 30, // Base age for OC
+        cutoffDate: '2026-08-01',
+        lastDate: '2026-11-13', // 3 days remaining (Urgent Red)
+        isActive: true,
+        vacancies: '8,400+ Posts',
+        categoryRelaxable: true,
+        type: 'Government',
+        tag: 'Central Govt'
+      },
+      {
+        id: 'GOV-102',
+        title: 'IBPS Probationary Officer (PO) XV',
+        org: 'Institute of Banking Personnel Selection',
+        minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA'],
+        maxAgeLimit: 30,
+        cutoffDate: '2026-10-01',
+        lastDate: '2026-11-18', // 8 days remaining (Warning Orange)
+        isActive: true,
+        vacancies: '4,050 Posts',
+        categoryRelaxable: true,
+        type: 'Government',
+        tag: 'Banking'
+      },
+      {
+        id: 'GOV-103',
+        title: 'RRB NTPC Graduate Level Posts',
+        org: 'Railway Recruitment Boards',
+        minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA', 'Diploma / ITI'],
+        maxAgeLimit: 33,
+        cutoffDate: '2026-07-01',
+        lastDate: '2026-12-05', // 25 days remaining (Safe Green)
+        isActive: true,
+        vacancies: '11,550 Posts',
+        categoryRelaxable: true,
+        type: 'Government',
+        tag: 'Railways'
+      },
+      {
+        id: 'GOV-104',
+        title: 'State Public Service Commission Group-1',
+        org: 'State Govt PSC',
+        minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA'],
+        maxAgeLimit: 42,
+        cutoffDate: '2026-07-01',
+        lastDate: '2026-11-05', // Closed application
+        isActive: false,
+        vacancies: '563 Posts',
+        categoryRelaxable: true,
+        type: 'Government',
+        tag: 'State Govt'
+      }
+    ];
+
+    const mockPrivateOpenings = [
+      {
+        id: 'PV-201',
+        role: 'Software Development Engineer (SDE-1)',
+        company: 'CloudTech Systems',
+        requiredSkills: ['python', 'sql', 'react', 'javascript', 'java', 'c++'],
+        allowedModes: ['Hybrid Preference', 'Remote / WFH', 'Open to All Modes'],
+        maxNotice: ['Immediate Joiner', '15 Days or Less', '30 Days'],
+        offeredCtc: '6.5 - 9.0 LPA',
+        lastDate: '2026-11-12', // 2 days remaining (Urgent Red)
+        isActive: true,
+        type: 'Private',
+        location: 'Bengaluru / Hyderabad (Hybrid)'
+      },
+      {
+        id: 'PV-202',
+        role: 'Junior Data & Business Analyst',
+        company: 'FinMetrics Analytics',
+        requiredSkills: ['sql', 'excel', 'python', 'tally', 'data entry', 'power bi'],
+        allowedModes: ['Hybrid Preference', 'On-Site / In-Office', 'Open to All Modes'],
+        maxNotice: ['Immediate Joiner', '15 Days or Less', '30 Days', '60 Days'],
+        offeredCtc: '4.5 - 6.0 LPA',
+        lastDate: '2026-11-20', // 10 days remaining (Orange boundary)
+        isActive: true,
+        type: 'Private',
+        location: 'Mumbai / Pune'
+      },
+      {
+        id: 'PV-203',
+        role: 'Associate Operations / HR Trainee',
+        company: 'Global Talent Solutions',
+        requiredSkills: ['communication', 'excel', 'hr ops', 'management', 'data entry'],
+        allowedModes: ['Remote / WFH', 'Hybrid Preference', 'Open to All Modes'],
+        maxNotice: ['Immediate Joiner', '15 Days or Less'],
+        offeredCtc: '3.5 - 5.0 LPA',
+        lastDate: '2026-12-15', // >10 days (Safe Green)
+        isActive: true,
+        type: 'Private',
+        location: 'Remote Work'
+      }
+    ];
+
+    // Helper: Calculate Remaining Days to Application Deadline
+    function calculateDaysRemaining(lastDateStr) {
+      if (!lastDateStr) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deadline = new Date(lastDateStr);
+      deadline.setHours(0, 0, 0, 0);
+      const diffTime = deadline - today;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // Helper: Get Urgency Theme Config (Red <=3, Orange 3-10, Green >10, Gray closed)
+    function getDeadlineUrgencyTheme(daysLeft, isActive) {
+      if (!isActive || daysLeft < 0) {
+        return {
+          cardBorder: 'border-slate-300 bg-slate-50/50',
+          badgeBg: 'bg-slate-200 text-slate-700 border-slate-300',
+          text: 'Application Closed',
+          daysText: 'Expired',
+          icon: 'fa-circle-xmark text-slate-500'
+        };
+      }
+      if (daysLeft <= 3) {
+        return {
+          cardBorder: 'border-rose-400 bg-rose-50/20 shadow-rose-100',
+          badgeBg: 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse',
+          text: `Closing Soon! (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`,
+          daysText: `${daysLeft} Days Left`,
+          icon: 'fa-fire text-rose-600'
+        };
+      } else if (daysLeft > 3 && daysLeft <= 10) {
+        return {
+          cardBorder: 'border-amber-400 bg-amber-50/20',
+          badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
+          text: `Apply Within ${daysLeft} Days`,
+          daysText: `${daysLeft} Days Left`,
+          icon: 'fa-clock text-amber-600'
+        };
+      } else {
+        return {
+          cardBorder: 'border-emerald-300 bg-emerald-50/20',
+          badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+          text: `Active (${daysLeft} days remaining)`,
+          daysText: `${daysLeft} Days Left`,
+          icon: 'fa-circle-check text-emerald-600'
+        };
+      }
+    }
+
+    // Calculate Government Age & Relaxation Info (Exact Years, Months, Days as of Cut-off Date)
+    function calculateGovEligibility() {
+      const dobVal = document.getElementById('dobInput').value;
+      const cutoffVal = document.getElementById('cutoffDateInput').value;
+      const category = document.getElementById('govCategory').value;
+      const pwdVal = document.getElementById('pwdStatus').value;
+      
+      const ageExactEl = document.getElementById('calculatedAgeExactText');
+      const maxAgeEl = document.getElementById('categoryMaxAgeText');
+      const relaxationEl = document.getElementById('relaxationBadgeText');
+      const infoEl = document.getElementById('ageRelaxationInfo');
+      const cutoffBadge = document.getElementById('cutoffDateBadge');
+
+      if (!cutoffVal) {
+        cutoffBadge.innerText = "As of: Not Set";
+      } else {
+        cutoffBadge.innerText = `As of: ${cutoffVal}`;
+      }
+
+      if (!dobVal || !cutoffVal) {
+        ageExactEl.innerText = "-- Y, -- M, -- D";
+        maxAgeEl.innerText = "--";
+        relaxationEl.innerText = "--";
+        infoEl.innerText = "Please select both Date of Birth and Cut-off Date.";
+        return;
+      }
+
+      const birthDate = new Date(dobVal);
+      const cutoffDate = new Date(cutoffVal);
+
+      if (cutoffDate < birthDate) {
+        ageExactEl.innerText = "Invalid Dates";
+        infoEl.innerText = "Cut-off date cannot be earlier than your date of birth.";
+        return;
+      }
+
+      // Calculate exact Difference in Years, Months, and Days
+      let years = cutoffDate.getFullYear() - birthDate.getFullYear();
+      let months = cutoffDate.getMonth() - birthDate.getMonth();
+      let days = cutoffDate.getDate() - birthDate.getDate();
+
+      if (days < 0) {
+        months--;
+        const prevMonth = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      const exactAgeFormatted = `${years} Y, ${months} M, ${days} D`;
+      ageExactEl.innerText = exactAgeFormatted;
+
+      // Category and PwD Relaxation Rules
+      let baseAgeLimit = 30; // Default General/OC limit for standard notifications
+      let relaxationYears = 0;
+
+      if (category.includes('OBC')) {
+        relaxationYears += 3;
+      } else if (category.includes('SC') || category.includes('ST')) {
+        relaxationYears += 5;
+      }
+
+      if (pwdVal.startsWith('Yes')) {
+        relaxationYears += 10;
+      }
+
+      const totalAllowedAge = baseAgeLimit + relaxationYears;
+
+      maxAgeEl.innerText = `${totalAllowedAge} Years`;
+      relaxationEl.innerText = `+${relaxationYears} Years`;
+
+      if (years < totalAllowedAge) {
+        infoEl.className = "text-xs text-emerald-800 font-semibold mt-1 flex items-center gap-1";
+        infoEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Eligible under upper age limit (${totalAllowedAge} Years) as of ${cutoffVal}.`;
+      } else if (years === totalAllowedAge && months === 0 && days === 0) {
+        infoEl.className = "text-xs text-amber-800 font-semibold mt-1 flex items-center gap-1";
+        infoEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Exactly at upper age limit boundary.`;
+      } else {
+        infoEl.className = "text-xs text-rose-700 font-semibold mt-1 flex items-center gap-1";
+        infoEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-600"></i> Exceeds maximum allowed age limit (${totalAllowedAge} Years) as of ${cutoffVal}.`;
+      }
+    }
+
+    // Real-Time Live Preview Renderer
+    function updateLivePreview() {
+      // Basic Details
+      const name = document.getElementById('fullName').value.trim() || 'Rahul Sharma';
+      const email = document.getElementById('email').value.trim() || 'rahul.sharma@example.com';
+      const mobile = document.getElementById('mobile').value.trim() || '+91 98765 43210';
+      const qual = document.getElementById('qualification').value || 'B.Tech / B.E.';
+      const spec = document.getElementById('specialization').value.trim() || 'Computer Science';
+      const passout = document.getElementById('passoutYear').value || '2024';
+      const score = document.getElementById('aggregateScore').value.trim() || '8.2 CGPA';
+      const expStatus = document.querySelector('input[name="expStatus"]:checked').value;
+      const yearsExp = document.getElementById('yearsExp').value;
+
+      // Update Name & Initials
+      document.getElementById('pvName').innerText = name;
+      document.getElementById('reviewNameLabel').innerText = name;
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CP';
+      document.getElementById('pvAvatarInitials').innerText = initials;
+
+      // Update Qualification
+      document.getElementById('pvQualification').innerText = `${qual} ${spec ? '- ' + spec : ''}`;
+      document.getElementById('reviewEduLabel').innerText = `${qual} (${passout})`;
+
+      // Experience Badge
+      if(expStatus === 'Experienced' && yearsExp) {
+        document.getElementById('pvExpText').innerText = `${yearsExp} Yrs Ex`;
+      } else {
+        document.getElementById('pvExpText').innerText = expStatus;
+      }
+      document.getElementById('pvPassoutText').innerText = `${passout} Passout`;
+
+      // Contact Details
+      document.getElementById('pvEmail').innerText = email;
+      document.getElementById('pvMobile').innerText = mobile;
+      document.getElementById('pvScore').innerText = `Score: ${score}`;
+
+      // Skill Tags
+      const skillsInput = document.getElementById('skillsInput').value.trim();
+      const skillsContainer = document.getElementById('pvSkillsContainer');
+      skillsContainer.innerHTML = '';
+
+      if(skillsInput) {
+        const skillsArr = skillsInput.split(',').filter(s => s.trim().length > 0);
+        skillsArr.forEach(skill => {
+          const badge = document.createElement('span');
+          badge.className = "px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium border border-slate-200/60";
+          badge.innerText = skill.trim();
+          skillsContainer.appendChild(badge);
+        });
+      } else {
+        skillsContainer.innerHTML = '<span class="px-2.5 py-1 bg-slate-100 text-slate-400 text-xs rounded-lg italic">No skills listed yet</span>';
+      }
+
+      // Track Specific Data
+      if(selectedTrack === 'private') {
+        document.getElementById('pvWorkPref').innerText = document.getElementById('workPreference').value;
+        document.getElementById('pvCtc').innerText = document.getElementById('expectedCtc').value.trim() || 'Negotiable';
+        document.getElementById('pvNotice').innerText = document.getElementById('noticePeriod').value;
+        document.getElementById('pvRoles').innerText = document.getElementById('targetRoles').value.trim() || 'Software Engineer / Ops';
+      } else {
+        document.getElementById('pvCategory').innerText = document.getElementById('govCategory').value.split(' ')[0] || 'OC';
+        document.getElementById('pvExactAgeCard').innerText = document.getElementById('calculatedAgeExactText').innerText || '--';
+        const gender = document.getElementById('gender').value;
+        const dob = document.getElementById('dobInput').value || 'DOB Not Set';
+        document.getElementById('pvGovGenderDob').innerText = `${gender} | ${dob}`;
+        document.getElementById('pvState').innerText = document.getElementById('nativeState').value;
+        document.getElementById('pvGovLanguages').innerText = document.getElementById('languageProficiency').value.trim() || 'English';
+        document.getElementById('pvGovPwd').innerText = document.getElementById('pwdStatus').value.startsWith('Yes') ? 'Yes' : 'No';
+      }
+    }
+
+    // SMART JOB SCANNER ENGINE LOGIC
+    let currentScannedResults = [];
+
+    function runSmartJobScanner() {
+      const container = document.getElementById('matchesContainer');
+      container.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-purple-600 block"></i> Scanning database against candidate profile...</div>`;
+
+      setTimeout(() => {
+        const qual = document.getElementById('qualification').value || 'B.Tech / B.E.';
+        const dobVal = document.getElementById('dobInput').value;
+        const category = document.getElementById('govCategory').value;
+        const pwdVal = document.getElementById('pwdStatus').value;
+        const userSkills = (document.getElementById('skillsInput').value || '').toLowerCase().split(',').map(s => s.trim());
+        const userNotice = document.getElementById('noticePeriod').value;
+        const userWorkPref = document.getElementById('workPreference').value;
+
+        currentScannedResults = [];
+
+        if(selectedTrack === 'government') {
+          // Process Government Notification Eligibility
+          mockGovNotifications.forEach(gov => {
+            let isEligible = true;
+            let matchScore = 100;
+            let statusReasons = [];
+
+            // Qualification Check
+            if(!gov.minQualification.includes(qual)) {
+              isEligible = false;
+              matchScore -= 40;
+              statusReasons.push(`Qualification mismatch (Requires: ${gov.minQualification[0]})`);
+            }
+
+            // Age & Relaxation Evaluation
+            if(dobVal) {
+              const birthDate = new Date(dobVal);
+              const cutoffDate = new Date(gov.cutoffDate);
+              let age = cutoffDate.getFullYear() - birthDate.getFullYear();
+              const m = cutoffDate.getMonth() - birthDate.getMonth();
+              if (m < 0 || (m === 0 && cutoffDate.getDate() < birthDate.getDate())) age--;
+
+              let allowedAge = gov.maxAgeLimit;
+              if(category.includes('OBC')) allowedAge += 3;
+              if(category.includes('SC') || category.includes('ST')) allowedAge += 5;
+              if(pwdVal.startsWith('Yes')) allowedAge += 10;
+
+              if(age > allowedAge) {
+                isEligible = false;
+                matchScore -= 50;
+                statusReasons.push(`Age limit exceeded (${age} Y vs Max Allowed ${allowedAge} Y as of ${gov.cutoffDate})`);
+              } else {
+                statusReasons.push(`Eligible Age (${age} Y as of cutoff ${gov.cutoffDate})`);
+              }
+            } else {
+              statusReasons.push(`Date of birth not provided for age calculation.`);
+            }
+
+            const daysRemaining = calculateDaysRemaining(gov.lastDate);
+
+            currentScannedResults.push({
+              title: gov.title,
+              org: gov.org,
+              type: 'Government',
+              tag: gov.tag,
+              lastDate: gov.lastDate,
+              daysRemaining: daysRemaining,
+              isActive: gov.isActive && daysRemaining >= 0,
+              score: Math.max(matchScore, 30),
+              isEligible: isEligible,
+              details: statusReasons,
+              meta: `Vacancies: ${gov.vacancies} | Cut-off: ${gov.cutoffDate}`
+            });
+          });
+        } else {
+          // Process Private Sector Skill & Preference Matching
+          mockPrivateOpenings.forEach(pv => {
+            let matchScore = 40;
+            let statusReasons = [];
+
+            // Skill Overlap Check
+            const matchingSkills = pv.requiredSkills.filter(sk => userSkills.includes(sk));
+            const skillScore = Math.round((matchingSkills.length / pv.requiredSkills.length) * 40);
+            matchScore += skillScore;
+
+            if(matchingSkills.length > 0) {
+              statusReasons.push(`Matched Skills: ${matchingSkills.join(', ')}`);
+            } else {
+              statusReasons.push(`Skill gaps identified (Requires: ${pv.requiredSkills.slice(0,3).join(', ')})`);
+            }
+
+            // Work Preference Match
+            if(pv.allowedModes.includes(userWorkPref) || userWorkPref === 'Open to All Modes') {
+              matchScore += 10;
+              statusReasons.push(`Work mode matched (${userWorkPref})`);
+            }
+
+            // Notice Period Match
+            if(pv.maxNotice.includes(userNotice)) {
+              matchScore += 10;
+              statusReasons.push(`Notice period acceptable (${userNotice})`);
+            }
+
+            const daysRemaining = calculateDaysRemaining(pv.lastDate);
+
+            currentScannedResults.push({
+              title: pv.role,
+              org: pv.company,
+              type: 'Private',
+              tag: pv.location,
+              lastDate: pv.lastDate,
+              daysRemaining: daysRemaining,
+              isActive: pv.isActive && daysRemaining >= 0,
+              score: Math.min(matchScore, 100),
+              isEligible: matchScore >= 70,
+              details: statusReasons,
+              meta: `Offered CTC: ${pv.offeredCtc}`
+            });
+          });
+        }
+
+        renderMatches(currentScannedResults);
+      }, 400);
+    }
+
+    function renderMatches(results) {
+      const container = document.getElementById('matchesContainer');
+      container.innerHTML = '';
+
+      if(results.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-slate-500 text-sm">No notifications or jobs found matching your criteria.</div>`;
+        return;
+      }
+
+      results.forEach(res => {
+        const card = document.createElement('div');
+        const scoreColor = res.score >= 80 ? 'text-emerald-600' : (res.score >= 60 ? 'text-amber-600' : 'text-rose-600');
+        
+        // Dynamic Urgency Theme Calculation
+        const urgency = getDeadlineUrgencyTheme(res.daysRemaining, res.isActive);
+
+        card.className = `bg-white p-5 rounded-2xl border-2 shadow-sm space-y-3 transition ${urgency.cardBorder}`;
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${res.type === 'Government' ? 'bg-amber-100 text-amber-800' : 'bg-brand-100 text-brand-800'}">${res.tag}</span>
+                <!-- Color-Coded Application Deadline Badge -->
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border flex items-center gap-1.5 ${urgency.badgeBg}">
+                  <i class="fa-solid ${urgency.icon}"></i> ${urgency.text}
+                </span>
+              </div>
+              <h3 class="text-base font-bold text-slate-900">${res.title}</h3>
+              <p class="text-xs font-semibold text-slate-500">${res.org}</p>
+            </div>
+            
+            <div class="text-right shrink-0">
+              <span class="text-xl font-extrabold ${scoreColor}">${res.score}%</span>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase">Match Score</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100 text-xs space-y-1">
+            <div class="flex justify-between items-center text-slate-600 border-b border-slate-200/60 pb-1.5 mb-1.5">
+              <span class="font-medium"><i class="fa-regular fa-calendar-days text-slate-400 mr-1"></i> Application Deadline:</span>
+              <span class="font-bold text-slate-800">${res.lastDate || 'N/A'}</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-600 border-b border-slate-200/60 pb-1.5 mb-1.5">
+              <span class="font-medium"><i class="fa-solid fa-circle-info text-slate-400 mr-1"></i> Key Info:</span>
+              <span class="font-semibold text-slate-700">${res.meta}</span>
+            </div>
+            ${res.details.map(d => `<div class="flex items-center gap-2 text-slate-700"><i class="fa-solid fa-angles-right text-[10px] text-slate-400"></i> ${d}</div>`).join('')}
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <span class="px-2.5 py-1 rounded-md text-xs font-bold border ${res.isEligible ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}">
+              ${res.isEligible ? '<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> 100% Eligible to Apply' : '<i class="fa-solid fa-triangle-exclamation text-rose-600 mr-1"></i> Criteria Boundary / Gap'}
+            </span>
+            <button type="button" ${res.isActive ? `onclick="showToast('Redirecting to official application portal for ${res.title}...', 'success')"` : 'disabled'} class="px-3.5 py-1.5 ${res.isActive ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} rounded-lg text-xs font-semibold transition">
+              ${res.isActive ? 'View & Apply Now' : 'Application Closed'}
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterMatches(filterType) {
+      document.querySelectorAll('#step-4 button[id^="matchTab-"]').forEach(btn => {
+        btn.className = "px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100";
+      });
+
+      const activeBtn = document.getElementById(`matchTab-${filterType}`);
+      activeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-100 text-purple-700";
+
+      if(filterType === 'all') {
+        renderMatches(currentScannedResults);
+      } else if(filterType === 'eligible') {
+        renderMatches(currentScannedResults.filter(r => r.isEligible));
+      } else if(filterType === 'partial') {
+        renderMatches(currentScannedResults.filter(r => r.score >= 50));
+      }
+    }
+
+    // Save Profile to Local Storage
+    function saveProfileToStorage(isSilent = false) {
+      const expRadio = document.querySelector('input[name="expStatus"]:checked');
+      const profileData = {
+        fullName: document.getElementById('fullName').value,
+        email: document.getElementById('email').value,
+        mobile: document.getElementById('mobile').value,
+        qualification: document.getElementById('qualification').value,
+        specialization: document.getElementById('specialization').value,
+        passoutYear: document.getElementById('passoutYear').value,
+        aggregateScore: document.getElementById('aggregateScore').value,
+        skillsInput: document.getElementById('skillsInput').value,
+        expStatus: expRadio ? expRadio.value : 'Fresher',
+        yearsExp: document.getElementById('yearsExp').value,
+        lastCompany: document.getElementById('lastCompany').value,
+        selectedTrack: selectedTrack,
+        
+        // Private fields
+        workPreference: document.getElementById('workPreference').value,
+        expectedCtc: document.getElementById('expectedCtc').value,
+        targetRoles: document.getElementById('targetRoles').value,
+        noticePeriod: document.getElementById('noticePeriod').value,
+        bondWillingness: document.getElementById('bondWillingness').value,
+        portfolioUrl: document.getElementById('portfolioUrl').value,
+
+        // Gov fields
+        govCategory: document.getElementById('govCategory').value,
+        gender: document.getElementById('gender').value,
+        dobInput: document.getElementById('dobInput').value,
+        cutoffDateInput: document.getElementById('cutoffDateInput').value,
+        nativeState: document.getElementById('nativeState').value,
+        pwdStatus: document.getElementById('pwdStatus').value,
+        exServiceman: document.getElementById('exServiceman').value,
+        languageProficiency: document.getElementById('languageProficiency').value,
+
+        // Document Checkboxes
+        chkDegree: document.getElementById('chkDegree')?.checked || false,
+        chkCaste: document.getElementById('chkCaste')?.checked || false,
+        chkDomicile: document.getElementById('chkDomicile')?.checked || false,
+        chkPhoto: document.getElementById('chkPhoto')?.checked || false
+      };
+
+      localStorage.setItem('careerpulse_profile', JSON.stringify(profileData));
+      if (!isSilent) {
+        showToast('Profile successfully saved to browser local storage!', 'success');
+      }
+    }
+
+    // Auto-load profile on page initial load
+    window.onload = function() {
+      // Set default cut-off date to today if empty
+      const cutoffInput = document.getElementById('cutoffDateInput');
+      if(cutoffInput && !cutoffInput.value) {
+        cutoffInput.value = new Date().toISOString().split('T')[0];
+      }
+      
+      const saved = localStorage.getItem('careerpulse_profile');
+      if (saved) {
+        loadSavedProfile();
+      } else {
+        calculateGovEligibility();
+        updateLivePreview();
+      }
+    };
+
+    // Load Profile from Local Storage
+    function loadSavedProfile() {
+      const saved = localStorage.getItem('careerpulse_profile');
+      if(!saved) {
+        showToast('No saved profile found in local storage.', 'warning');
+        return;
+      }
+
+      try {
+        const p = JSON.parse(saved);
+        
+        document.getElementById('fullName').value = p.fullName || '';
+        document.getElementById('email').value = p.email || '';
+        document.getElementById('mobile').value = p.mobile || '';
+        document.getElementById('qualification').value = p.qualification || '';
+        document.getElementById('specialization').value = p.specialization || '';
+        document.getElementById('passoutYear').value = p.passoutYear || '';
+        document.getElementById('aggregateScore').value = p.aggregateScore || '';
+        document.getElementById('skillsInput').value = p.skillsInput || '';
+
+        if(p.expStatus) {
+          const radio = document.querySelector(`input[name="expStatus"][value="${p.expStatus}"]`);
+          if(radio) radio.checked = true;
+          toggleExperienceFields();
+        }
+
+        document.getElementById('yearsExp').value = p.yearsExp || '';
+        document.getElementById('lastCompany').value = p.lastCompany || '';
+
+        // Private Fields
+        document.getElementById('workPreference').value = p.workPreference || 'Hybrid Preference';
+        document.getElementById('expectedCtc').value = p.expectedCtc || '';
+        document.getElementById('targetRoles').value = p.targetRoles || '';
+        document.getElementById('noticePeriod').value = p.noticePeriod || 'Immediate Joiner';
+        document.getElementById('bondWillingness').value = p.bondWillingness || 'Yes (Up to 1 Year)';
+        document.getElementById('portfolioUrl').value = p.portfolioUrl || '';
+
+        // Gov Fields
+        document.getElementById('govCategory').value = p.govCategory || 'OC / Unreserved (UR)';
+        document.getElementById('gender').value = p.gender || 'Male';
+        document.getElementById('dobInput').value = p.dobInput || '';
+        document.getElementById('cutoffDateInput').value = p.cutoffDateInput || new Date().toISOString().split('T')[0];
+        document.getElementById('nativeState').value = p.nativeState || 'Andhra Pradesh';
+        document.getElementById('pwdStatus').value = p.pwdStatus || 'No';
+        document.getElementById('exServiceman').value = p.exServiceman || 'No';
+        document.getElementById('languageProficiency').value = p.languageProficiency || '';
+
+        // Document Checkboxes
+        if(document.getElementById('chkDegree')) document.getElementById('chkDegree').checked = !!p.chkDegree;
+        if(document.getElementById('chkCaste')) document.getElementById('chkCaste').checked = !!p.chkCaste;
+        if(document.getElementById('chkDomicile')) document.getElementById('chkDomicile').checked = !!p.chkDomicile;
+        if(document.getElementById('chkPhoto')) document.getElementById('chkPhoto').checked = !!p.chkPhoto;
+
+        // Set active track
+        setTrack(p.selectedTrack || 'private');
+        calculateGovEligibility();
+        updateLivePreview();
+
+        showToast('Profile loaded successfully!', 'success');
+      } catch(e) {
+        showToast('Error parsing saved profile data.', 'error');
+      }
+    }
+
+    // Export Profile Data as Downloadable JSON File
+    function exportProfileJSON() {
+      saveProfileToStorage(true);
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(localStorage.getItem('careerpulse_profile'));
+      const downloadAnchor = document.createElement('a');
+      const name = (document.getElementById('fullName').value || 'Candidate').replace(/\s+/g, '_');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `CareerPulse_Profile_${name}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('JSON Profile backup downloaded!', 'success');
+    }
+
+    // Trigger File Input for Import
+    function triggerImportJSON() {
+      document.getElementById('jsonFileInput').click();
+    }
+
+    // Import Profile JSON from File
+    function importProfileJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const content = e.target.result;
+          JSON.parse(content); // Validate JSON format
+          localStorage.setItem('careerpulse_profile', content);
+          loadSavedProfile();
+          showToast('Profile imported successfully from JSON!', 'success');
+        } catch(err) {
+          showToast('Invalid JSON profile file.', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Reset Form
+    function resetProfile() {
+      document.getElementById('profileForm').reset();
+      toggleExperienceFields();
+      setTrack('private');
+      updateLivePreview();
+      showToast('Form reset to defaults.', 'info');
+    }
+
+    // Copy Summary Text
+    function copyProfileSummaryText() {
+      const name = document.getElementById('fullName').value || 'Candidate';
+      const qual = document.getElementById('qualification').value;
+      const spec = document.getElementById('specialization').value;
+      const passout = document.getElementById('passoutYear').value;
+      const score = document.getElementById('aggregateScore').value;
+      const skills = document.getElementById('skillsInput').value;
+
+      let summaryText = `CAREERPULSE CANDIDATE PROFILE\n`;
+      summaryText += `---------------------------------\n`;
+      summaryText += `Name: ${name}\n`;
+      summaryText += `Qualification: ${qual} (${spec})\n`;
+      summaryText += `Passout Year: ${passout} | Score: ${score}\n`;
+      summaryText += `Key Skills: ${skills}\n`;
+      summaryText += `Career Track: ${selectedTrack.toUpperCase()}\n`;
+
+      if(selectedTrack === 'private') {
+        summaryText += `Preferred Mode: ${document.getElementById('workPreference').value}\n`;
+        summaryText += `Target Roles: ${document.getElementById('targetRoles').value}\n`;
+        summaryText += `Notice Period: ${document.getElementById('noticePeriod').value}\n`;
+        summaryText += `Expected CTC: ${document.getElementById('expectedCtc').value}\n`;
+      } else {
+        summaryText += `Category: ${document.getElementById('govCategory').value}\n`;
+        summaryText += `DOB: ${document.getElementById('dobInput').value}\n`;
+        summaryText += `Native State: ${document.getElementById('nativeState').value}\n`;
+        summaryText += `Languages: ${document.getElementById('languageProficiency').value}\n`;
+      }
+
+      // Executing Copy using standard fallback
+      const textArea = document.createElement("textarea");
+      textArea.value = summaryText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Profile summary copied to clipboard!', 'success');
+      } catch (err) {
+        showToast('Unable to copy text.', 'error');
+      }
+      document.body.removeChild(textArea);
+    }
+
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let bgClass = "bg-slate-800 text-white";
+      if(type === 'success') bgClass = "bg-emerald-600 text-white";
+      if(type === 'warning') bgClass = "bg-amber-600 text-white";
+      if(type === 'error') bgClass = "bg-rose-600 text-white";
+
+      toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 fade-in ${bgClass}`;
+      toast.innerHTML = `<span>${message}</span>`;
+      
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
