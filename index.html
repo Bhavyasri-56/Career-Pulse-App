@@ -607,6 +607,47 @@
               <!-- Cards rendered dynamically via JS -->
             </div>
 
+            <!-- FEATURE #2: CUSTOM EXAM & DEADLINE TRACKER FORM -->
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-2xl border border-purple-200 shadow-sm space-y-4 mt-6">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center text-sm font-bold">
+                  <i class="fa-solid fa-plus"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-purple-950">Add Custom Opportunity / Notification Tracker</h3>
+                  <p class="text-xs text-purple-700">Track custom exam dates or private company deadlines with color-coded alerts.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label class="block font-semibold text-purple-900 mb-1">Exam / Job Title *</label>
+                  <input type="text" id="customTitle" placeholder="e.g. APPSC Group 2 or TCS Offcampus" class="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                </div>
+                <div>
+                  <label class="block font-semibold text-purple-900 mb-1">Organization / Board *</label>
+                  <input type="text" id="customOrg" placeholder="e.g. State PSC / Tech Corp" class="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                </div>
+                <div>
+                  <label class="block font-semibold text-purple-900 mb-1">Application Last Date *</label>
+                  <input type="date" id="customLastDate" class="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                </div>
+                <div>
+                  <label class="block font-semibold text-purple-900 mb-1">Type *</label>
+                  <select id="customType" class="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                    <option value="Government">Government Exam</option>
+                    <option value="Private">Private Drive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex justify-end">
+                <button type="button" onclick="addCustomNotification()" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                  <i class="fa-solid fa-bookmark"></i> Add to Target Radar
+                </button>
+              </div>
+            </div>
+
             <div class="flex justify-start pt-2">
               <button type="button" onclick="switchStep(3)" class="px-5 py-2.5 text-slate-600 hover:text-slate-900 font-medium text-sm transition flex items-center gap-2">
                 <i class="fa-solid fa-arrow-left text-xs"></i> Back to Review
@@ -769,6 +810,182 @@
     let currentStep = 1;
     let selectedTrack = 'private'; // 'private' or 'government'
 
+    // Helper Function: Calculate Days Remaining to Deadline
+    function calculateDaysRemaining(targetDateStr) {
+      if (!targetDateStr) return 99;
+      const target = new Date(targetDateStr);
+      const today = new Date();
+      // Reset time portion for accurate date-only difference
+      target.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      const diffTime = target - today;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // Helper Function: Get Color Theme Badging based on Deadline Urgency
+    function getDeadlineUrgencyTheme(daysLeft, isActive) {
+      if (!isActive || daysLeft < 0) {
+        return {
+          cardBorder: 'border-slate-200 hover:border-slate-300',
+          badgeBg: 'bg-slate-100 text-slate-600 border-slate-300',
+          icon: 'fa-calendar-xmark text-slate-400',
+          text: 'Application Closed'
+        };
+      }
+      if (daysLeft <= 3) {
+        return {
+          cardBorder: 'border-rose-300 bg-rose-50/20 shadow-rose-100 hover:border-rose-400',
+          badgeBg: 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse',
+          icon: 'fa-circle-exclamation text-rose-600',
+          text: `Closing Soon! ${daysLeft <= 0 ? 'Today' : daysLeft + ' Day(s) Left'}`
+        };
+      }
+      if (daysLeft <= 10) {
+        return {
+          cardBorder: 'border-amber-300 bg-amber-50/20 shadow-amber-100 hover:border-amber-400',
+          badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
+          icon: 'fa-clock text-amber-600',
+          text: `Apply Within ${daysLeft} Days`
+        };
+      }
+      return {
+        cardBorder: 'border-emerald-200 bg-emerald-50/10 shadow-emerald-50 hover:border-emerald-300',
+        badgeBg: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        icon: 'fa-circle-check text-emerald-600',
+        text: `Active (${daysLeft} Days Left)`
+      };
+    }
+
+    // Government Age & Cut-off Eligibility Calculator
+    function calculateGovEligibility() {
+      const dobVal = document.getElementById('dobInput')?.value;
+      const cutoffVal = document.getElementById('cutoffDateInput')?.value || new Date().toISOString().split('T')[0];
+      const category = document.getElementById('govCategory')?.value || 'OC';
+      const pwdVal = document.getElementById('pwdStatus')?.value || 'No';
+
+      const cutoffBadge = document.getElementById('cutoffDateBadge');
+      if (cutoffBadge) cutoffBadge.innerText = `As of: ${cutoffVal}`;
+
+      if (!dobVal) {
+        if(document.getElementById('calculatedAgeExactText')) document.getElementById('calculatedAgeExactText').innerText = '-- Y, -- M, -- D';
+        if(document.getElementById('ageRelaxationInfo')) document.getElementById('ageRelaxationInfo').innerText = 'Select Date of Birth to calculate exact cutoff age eligibility.';
+        return;
+      }
+
+      const birthDate = new Date(dobVal);
+      const cutoffDate = new Date(cutoffVal);
+
+      let years = cutoffDate.getFullYear() - birthDate.getFullYear();
+      let months = cutoffDate.getMonth() - birthDate.getMonth();
+      let days = cutoffDate.getDate() - birthDate.getDate();
+
+      if (days < 0) {
+        months--;
+        const prevMonthDays = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), 0).getDate();
+        days += prevMonthDays;
+      }
+
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      // Base age limits & relaxations
+      let baseMaxAge = 30;
+      let relaxation = 0;
+
+      if (category.includes('OBC')) relaxation += 3;
+      if (category.includes('SC') || category.includes('ST')) relaxation += 5;
+      if (pwdVal.startsWith('Yes')) relaxation += 10;
+
+      const totalAllowedAge = baseMaxAge + relaxation;
+
+      if(document.getElementById('calculatedAgeExactText')) {
+        document.getElementById('calculatedAgeExactText').innerText = `${years} Y, ${months} M, ${days} D`;
+      }
+      if(document.getElementById('categoryMaxAgeText')) {
+        document.getElementById('categoryMaxAgeText').innerText = `${totalAllowedAge} Years (${category.split(' ')[0]})`;
+      }
+      if(document.getElementById('relaxationBadgeText')) {
+        document.getElementById('relaxationBadgeText').innerText = `+${relaxation} Years`;
+      }
+
+      const infoBox = document.getElementById('ageRelaxationInfo');
+      if (infoBox) {
+        if (years < totalAllowedAge || (years === totalAllowedAge && months === 0 && days === 0)) {
+          infoBox.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Eligible for General & Sectoral Cutoffs</span> (Age: ${years} Y vs Max: ${totalAllowedAge} Y)`;
+        } else {
+          infoBox.innerHTML = `<span class="text-rose-700 font-bold"><i class="fa-solid fa-circle-xmark"></i> Upper Age Limit Exceeded</span> (${years} Y exceeds maximum ${totalAllowedAge} Y allowed for ${category})`;
+        }
+      }
+    }
+
+    // Live Profile Preview Update Logic
+    function updateLivePreview() {
+      const name = document.getElementById('fullName')?.value.trim() || 'John Doe';
+      const qual = document.getElementById('qualification')?.value || 'B.Tech / B.E.';
+      const spec = document.getElementById('specialization')?.value.trim() || 'Computer Science';
+      const email = document.getElementById('email')?.value.trim() || 'email@domain.com';
+      const mobile = document.getElementById('mobile')?.value.trim() || '+91 XXXXX XXXXX';
+      const passout = document.getElementById('passoutYear')?.value || '2024';
+      const score = document.getElementById('aggregateScore')?.value.trim() || '78%';
+      const skillsStr = document.getElementById('skillsInput')?.value.trim() || '';
+
+      // Set Name & Qualification
+      if(document.getElementById('pvName')) document.getElementById('pvName').innerText = name;
+      if(document.getElementById('pvQualification')) document.getElementById('pvQualification').innerText = `${qual}${spec ? ' - ' + spec : ''}`;
+      if(document.getElementById('pvEmail')) document.getElementById('pvEmail').innerText = email;
+      if(document.getElementById('pvMobile')) document.getElementById('pvMobile').innerText = mobile;
+      if(document.getElementById('pvScore')) document.getElementById('pvScore').innerText = `Score: ${score}`;
+      if(document.getElementById('pvPassoutText')) document.getElementById('pvPassoutText').innerText = `${passout} Passout`;
+
+      // Set Initials
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'JD';
+      if(document.getElementById('pvAvatarInitials')) document.getElementById('pvAvatarInitials').innerText = initials;
+
+      // Work Ex Status
+      const expRadio = document.querySelector('input[name="expStatus"]:checked');
+      const expText = expRadio ? expRadio.value : 'Fresher';
+      if(document.getElementById('pvExpText')) document.getElementById('pvExpText').innerText = expText;
+
+      // Render Skills Badges
+      const skillsContainer = document.getElementById('pvSkillsContainer');
+      if(skillsContainer) {
+        skillsContainer.innerHTML = '';
+        if(skillsStr) {
+          const skillsList = skillsStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+          skillsList.forEach(sk => {
+            const badge = document.createElement('span');
+            badge.className = "px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium capitalize";
+            badge.innerText = sk;
+            skillsContainer.appendChild(badge);
+          });
+        } else {
+          skillsContainer.innerHTML = `<span class="px-2.5 py-1 bg-slate-100 text-slate-400 text-xs rounded-lg font-medium">Add skills...</span>`;
+        }
+      }
+
+      // Private Track Preview Fields
+      if(document.getElementById('pvWorkPref')) document.getElementById('pvWorkPref').innerText = document.getElementById('workPreference')?.value || 'Hybrid';
+      if(document.getElementById('pvCtc')) document.getElementById('pvCtc').innerText = document.getElementById('expectedCtc')?.value || 'Negotiable';
+      if(document.getElementById('pvNotice')) document.getElementById('pvNotice').innerText = document.getElementById('noticePeriod')?.value || 'Immediate';
+      if(document.getElementById('pvRoles')) document.getElementById('pvRoles').innerText = document.getElementById('targetRoles')?.value || 'Software Engineer';
+
+      // Government Track Preview Fields
+      if(document.getElementById('pvCategory')) document.getElementById('pvCategory').innerText = document.getElementById('govCategory')?.value || 'OC / Unreserved (UR)';
+      if(document.getElementById('pvGovGenderDob')) {
+        const gender = document.getElementById('gender')?.value || 'Male';
+        const dob = document.getElementById('dobInput')?.value || '--';
+        document.getElementById('pvGovGenderDob').innerText = `${gender} | ${dob}`;
+      }
+      if(document.getElementById('pvState')) document.getElementById('pvState').innerText = document.getElementById('nativeState')?.value || 'Andhra Pradesh';
+      if(document.getElementById('pvGovLanguages')) document.getElementById('pvGovLanguages').innerText = document.getElementById('languageProficiency')?.value || 'English';
+      if(document.getElementById('pvGovPwd')) document.getElementById('pvGovPwd').innerText = document.getElementById('pwdStatus')?.value || 'No';
+
+      const ageText = document.getElementById('calculatedAgeExactText')?.innerText;
+      if(document.getElementById('pvExactAgeCard')) document.getElementById('pvExactAgeCard').innerText = (ageText && ageText !== '-- Y, -- M, -- D') ? ageText : '--';
+    }
+
     // Track Navigation Switcher
     function setTrack(track) {
       selectedTrack = track;
@@ -886,10 +1103,34 @@
         vacancies: '8,400+ Posts',
         categoryRelaxable: true,
         type: 'Government',
-        tag: 'Central Govt'
+        tag: 'Central Govt',
+        syllabus: {
+          pattern: 'Tier-1 (100 Qs / 200 Marks, 60 Mins) + Tier-2 (Paper-1 Computer + Quant)',
+          subjects: 'Reasoning, Quant, English Comprehension, General Awareness, Computer Knowledge',
+          negativeMarking: '0.50 Marks in Tier 1 | 1/3rd in Tier 2'
+        }
       },
       {
         id: 'GOV-102',
+        title: 'UPSC Civil Services Examination (CSE) 2026',
+        org: 'Union Public Service Commission',
+        minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA'],
+        maxAgeLimit: 32,
+        cutoffDate: '2026-08-01',
+        lastDate: '2026-11-19', // 9 days remaining (Warning Orange)
+        isActive: true,
+        vacancies: '1,056 Posts (IAS/IPS/IFS)',
+        categoryRelaxable: true,
+        type: 'Government',
+        tag: 'UPSC / Central',
+        syllabus: {
+          pattern: 'Prelims (GS-1 200m + CSAT 200m) -> Mains (9 Papers) -> Personality Test',
+          subjects: 'Indian Polity, Economy, Modern History, Geography, Environment, CSAT Quant & Verbal',
+          negativeMarking: '1/3rd negative marking in Prelims GS & CSAT'
+        }
+      },
+      {
+        id: 'GOV-103',
         title: 'IBPS Probationary Officer (PO) XV',
         org: 'Institute of Banking Personnel Selection',
         minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA'],
@@ -900,35 +1141,50 @@
         vacancies: '4,050 Posts',
         categoryRelaxable: true,
         type: 'Government',
-        tag: 'Banking'
+        tag: 'Banking',
+        syllabus: {
+          pattern: 'Prelims (100 Qs / 60 Mins) -> Mains (225 Marks) -> Interview',
+          subjects: 'Data Analysis & Interpretation, Banking Awareness, English, Reasoning Ability',
+          negativeMarking: '0.25 Marks per wrong answer'
+        }
       },
       {
-        id: 'GOV-103',
-        title: 'RRB NTPC Graduate Level Posts',
-        org: 'Railway Recruitment Boards',
+        id: 'GOV-104',
+        title: 'RRB Assistant Loco Pilot (ALP) & NTPC',
+        org: 'Railway Recruitment Boards (RRB)',
         minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA', 'Diploma / ITI'],
         maxAgeLimit: 33,
         cutoffDate: '2026-07-01',
         lastDate: '2026-12-05', // 25 days remaining (Safe Green)
         isActive: true,
-        vacancies: '11,550 Posts',
+        vacancies: '18,799 Posts',
         categoryRelaxable: true,
         type: 'Government',
-        tag: 'Railways'
+        tag: 'Railways',
+        syllabus: {
+          pattern: 'CBT-1 (Screening 75 Qs) -> CBT-2 (Part A Core + Part B Trade Test) -> CBAT/DV',
+          subjects: 'Mathematics, General Intelligence, Basic Science & Engineering Trade',
+          negativeMarking: '1/3rd mark deduction per wrong answer'
+        }
       },
       {
-        id: 'GOV-104',
-        title: 'State Public Service Commission Group-1',
-        org: 'State Govt PSC',
-        minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA', 'BCA / MCA'],
-        maxAgeLimit: 42,
-        cutoffDate: '2026-07-01',
-        lastDate: '2026-11-05', // Closed application
-        isActive: false,
-        vacancies: '563 Posts',
-        categoryRelaxable: true,
+        id: 'GOV-105',
+        title: 'UPSC Combined Defence Services (CDS) I',
+        org: 'Ministry of Defence / UPSC',
+        minQualification: ['B.Tech / B.E.', 'B.Sc / M.Sc', 'B.Com / M.Com', 'BBA / MBA'],
+        maxAgeLimit: 24,
+        cutoffDate: '2026-01-01',
+        lastDate: '2026-12-10', // Safe Green
+        isActive: true,
+        vacancies: '457 Officers',
+        categoryRelaxable: false,
         type: 'Government',
-        tag: 'State Govt'
+        tag: 'Defense / Forces',
+        syllabus: {
+          pattern: 'Written Exam (English 100m, GS 100m, Elementary Math 100m) -> 5-Day SSB Interview',
+          subjects: 'General Knowledge, Physics/Chemistry, Military History, Advanced Mathematics',
+          negativeMarking: '0.33 Marks per wrong attempt'
+        }
       }
     ];
 
@@ -974,209 +1230,56 @@
       }
     ];
 
-    // Helper: Calculate Remaining Days to Application Deadline
-    function calculateDaysRemaining(lastDateStr) {
-      if (!lastDateStr) return null;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const deadline = new Date(lastDateStr);
-      deadline.setHours(0, 0, 0, 0);
-      const diffTime = deadline - today;
-      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
+    // Array to store custom user added notifications
+    let customNotificationsList = [];
 
-    // Helper: Get Urgency Theme Config (Red <=3, Orange 3-10, Green >10, Gray closed)
-    function getDeadlineUrgencyTheme(daysLeft, isActive) {
-      if (!isActive || daysLeft < 0) {
-        return {
-          cardBorder: 'border-slate-300 bg-slate-50/50',
-          badgeBg: 'bg-slate-200 text-slate-700 border-slate-300',
-          text: 'Application Closed',
-          daysText: 'Expired',
-          icon: 'fa-circle-xmark text-slate-500'
-        };
-      }
-      if (daysLeft <= 3) {
-        return {
-          cardBorder: 'border-rose-400 bg-rose-50/20 shadow-rose-100',
-          badgeBg: 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse',
-          text: `Closing Soon! (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`,
-          daysText: `${daysLeft} Days Left`,
-          icon: 'fa-fire text-rose-600'
-        };
-      } else if (daysLeft > 3 && daysLeft <= 10) {
-        return {
-          cardBorder: 'border-amber-400 bg-amber-50/20',
-          badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
-          text: `Apply Within ${daysLeft} Days`,
-          daysText: `${daysLeft} Days Left`,
-          icon: 'fa-clock text-amber-600'
-        };
-      } else {
-        return {
-          cardBorder: 'border-emerald-300 bg-emerald-50/20',
-          badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-          text: `Active (${daysLeft} days remaining)`,
-          daysText: `${daysLeft} Days Left`,
-          icon: 'fa-circle-check text-emerald-600'
-        };
-      }
-    }
+    // Add Custom Notification Function
+    function addCustomNotification() {
+      const title = document.getElementById('customTitle').value.trim();
+      const org = document.getElementById('customOrg').value.trim();
+      const lastDate = document.getElementById('customLastDate').value;
+      const type = document.getElementById('customType').value;
 
-    // Calculate Government Age & Relaxation Info (Exact Years, Months, Days as of Cut-off Date)
-    function calculateGovEligibility() {
-      const dobVal = document.getElementById('dobInput').value;
-      const cutoffVal = document.getElementById('cutoffDateInput').value;
-      const category = document.getElementById('govCategory').value;
-      const pwdVal = document.getElementById('pwdStatus').value;
+      if (!title || !org || !lastDate) {
+        showToast('Please fill in Title, Organization, and Last Date.', 'warning');
+        return;
+      }
+
+      const daysRemaining = calculateDaysRemaining(lastDate);
+
+      const customItem = {
+        title: title,
+        org: org,
+        type: type,
+        tag: 'User Saved',
+        lastDate: lastDate,
+        daysRemaining: daysRemaining,
+        isActive: daysRemaining >= 0,
+        score: 100,
+        isEligible: true,
+        details: [`Manually added to candidate tracking radar on ${new Date().toLocaleDateString()}`],
+        meta: `Custom Priority Alert | Last Date: ${lastDate}`,
+        syllabus: {
+          pattern: 'Custom user defined target notification',
+          subjects: 'Check official portal notification brochure for syllabus details.',
+          negativeMarking: 'Refer official guidelines'
+        }
+      };
+
+      customNotificationsList.push(customItem);
+      document.getElementById('customTitle').value = '';
+      document.getElementById('customOrg').value = '';
+      document.getElementById('customLastDate').value = '';
       
-      const ageExactEl = document.getElementById('calculatedAgeExactText');
-      const maxAgeEl = document.getElementById('categoryMaxAgeText');
-      const relaxationEl = document.getElementById('relaxationBadgeText');
-      const infoEl = document.getElementById('ageRelaxationInfo');
-      const cutoffBadge = document.getElementById('cutoffDateBadge');
-
-      if (!cutoffVal) {
-        cutoffBadge.innerText = "As of: Not Set";
-      } else {
-        cutoffBadge.innerText = `As of: ${cutoffVal}`;
-      }
-
-      if (!dobVal || !cutoffVal) {
-        ageExactEl.innerText = "-- Y, -- M, -- D";
-        maxAgeEl.innerText = "--";
-        relaxationEl.innerText = "--";
-        infoEl.innerText = "Please select both Date of Birth and Cut-off Date.";
-        return;
-      }
-
-      const birthDate = new Date(dobVal);
-      const cutoffDate = new Date(cutoffVal);
-
-      if (cutoffDate < birthDate) {
-        ageExactEl.innerText = "Invalid Dates";
-        infoEl.innerText = "Cut-off date cannot be earlier than your date of birth.";
-        return;
-      }
-
-      // Calculate exact Difference in Years, Months, and Days
-      let years = cutoffDate.getFullYear() - birthDate.getFullYear();
-      let months = cutoffDate.getMonth() - birthDate.getMonth();
-      let days = cutoffDate.getDate() - birthDate.getDate();
-
-      if (days < 0) {
-        months--;
-        const prevMonth = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), 0);
-        days += prevMonth.getDate();
-      }
-
-      if (months < 0) {
-        years--;
-        months += 12;
-      }
-
-      const exactAgeFormatted = `${years} Y, ${months} M, ${days} D`;
-      ageExactEl.innerText = exactAgeFormatted;
-
-      // Category and PwD Relaxation Rules
-      let baseAgeLimit = 30; // Default General/OC limit for standard notifications
-      let relaxationYears = 0;
-
-      if (category.includes('OBC')) {
-        relaxationYears += 3;
-      } else if (category.includes('SC') || category.includes('ST')) {
-        relaxationYears += 5;
-      }
-
-      if (pwdVal.startsWith('Yes')) {
-        relaxationYears += 10;
-      }
-
-      const totalAllowedAge = baseAgeLimit + relaxationYears;
-
-      maxAgeEl.innerText = `${totalAllowedAge} Years`;
-      relaxationEl.innerText = `+${relaxationYears} Years`;
-
-      if (years < totalAllowedAge) {
-        infoEl.className = "text-xs text-emerald-800 font-semibold mt-1 flex items-center gap-1";
-        infoEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Eligible under upper age limit (${totalAllowedAge} Years) as of ${cutoffVal}.`;
-      } else if (years === totalAllowedAge && months === 0 && days === 0) {
-        infoEl.className = "text-xs text-amber-800 font-semibold mt-1 flex items-center gap-1";
-        infoEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Exactly at upper age limit boundary.`;
-      } else {
-        infoEl.className = "text-xs text-rose-700 font-semibold mt-1 flex items-center gap-1";
-        infoEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-600"></i> Exceeds maximum allowed age limit (${totalAllowedAge} Years) as of ${cutoffVal}.`;
-      }
+      showToast('Custom notification saved to your tracker radar!', 'success');
+      runSmartJobScanner();
     }
 
-    // Real-Time Live Preview Renderer
-    function updateLivePreview() {
-      // Basic Details
-      const name = document.getElementById('fullName').value.trim() || 'Rahul Sharma';
-      const email = document.getElementById('email').value.trim() || 'rahul.sharma@example.com';
-      const mobile = document.getElementById('mobile').value.trim() || '+91 98765 43210';
-      const qual = document.getElementById('qualification').value || 'B.Tech / B.E.';
-      const spec = document.getElementById('specialization').value.trim() || 'Computer Science';
-      const passout = document.getElementById('passoutYear').value || '2024';
-      const score = document.getElementById('aggregateScore').value.trim() || '8.2 CGPA';
-      const expStatus = document.querySelector('input[name="expStatus"]:checked').value;
-      const yearsExp = document.getElementById('yearsExp').value;
-
-      // Update Name & Initials
-      document.getElementById('pvName').innerText = name;
-      document.getElementById('reviewNameLabel').innerText = name;
-      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CP';
-      document.getElementById('pvAvatarInitials').innerText = initials;
-
-      // Update Qualification
-      document.getElementById('pvQualification').innerText = `${qual} ${spec ? '- ' + spec : ''}`;
-      document.getElementById('reviewEduLabel').innerText = `${qual} (${passout})`;
-
-      // Experience Badge
-      if(expStatus === 'Experienced' && yearsExp) {
-        document.getElementById('pvExpText').innerText = `${yearsExp} Yrs Ex`;
-      } else {
-        document.getElementById('pvExpText').innerText = expStatus;
-      }
-      document.getElementById('pvPassoutText').innerText = `${passout} Passout`;
-
-      // Contact Details
-      document.getElementById('pvEmail').innerText = email;
-      document.getElementById('pvMobile').innerText = mobile;
-      document.getElementById('pvScore').innerText = `Score: ${score}`;
-
-      // Skill Tags
-      const skillsInput = document.getElementById('skillsInput').value.trim();
-      const skillsContainer = document.getElementById('pvSkillsContainer');
-      skillsContainer.innerHTML = '';
-
-      if(skillsInput) {
-        const skillsArr = skillsInput.split(',').filter(s => s.trim().length > 0);
-        skillsArr.forEach(skill => {
-          const badge = document.createElement('span');
-          badge.className = "px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium border border-slate-200/60";
-          badge.innerText = skill.trim();
-          skillsContainer.appendChild(badge);
-        });
-      } else {
-        skillsContainer.innerHTML = '<span class="px-2.5 py-1 bg-slate-100 text-slate-400 text-xs rounded-lg italic">No skills listed yet</span>';
-      }
-
-      // Track Specific Data
-      if(selectedTrack === 'private') {
-        document.getElementById('pvWorkPref').innerText = document.getElementById('workPreference').value;
-        document.getElementById('pvCtc').innerText = document.getElementById('expectedCtc').value.trim() || 'Negotiable';
-        document.getElementById('pvNotice').innerText = document.getElementById('noticePeriod').value;
-        document.getElementById('pvRoles').innerText = document.getElementById('targetRoles').value.trim() || 'Software Engineer / Ops';
-      } else {
-        document.getElementById('pvCategory').innerText = document.getElementById('govCategory').value.split(' ')[0] || 'OC';
-        document.getElementById('pvExactAgeCard').innerText = document.getElementById('calculatedAgeExactText').innerText || '--';
-        const gender = document.getElementById('gender').value;
-        const dob = document.getElementById('dobInput').value || 'DOB Not Set';
-        document.getElementById('pvGovGenderDob').innerText = `${gender} | ${dob}`;
-        document.getElementById('pvState').innerText = document.getElementById('nativeState').value;
-        document.getElementById('pvGovLanguages').innerText = document.getElementById('languageProficiency').value.trim() || 'English';
-        document.getElementById('pvGovPwd').innerText = document.getElementById('pwdStatus').value.startsWith('Yes') ? 'Yes' : 'No';
+    // Toggle Syllabus Modal / Dropdown View
+    function toggleSyllabusView(cardId) {
+      const syllabusEl = document.getElementById(`syllabus-${cardId}`);
+      if (syllabusEl) {
+        syllabusEl.classList.toggle('hidden');
       }
     }
 
@@ -1197,6 +1300,12 @@
         const userWorkPref = document.getElementById('workPreference').value;
 
         currentScannedResults = [];
+
+        // First append user-custom entries
+        customNotificationsList.forEach((cust, idx) => {
+          cust.id = `CUST-${idx}`;
+          currentScannedResults.push(cust);
+        });
 
         if(selectedTrack === 'government') {
           // Process Government Notification Eligibility
@@ -1221,9 +1330,11 @@
               if (m < 0 || (m === 0 && cutoffDate.getDate() < birthDate.getDate())) age--;
 
               let allowedAge = gov.maxAgeLimit;
-              if(category.includes('OBC')) allowedAge += 3;
-              if(category.includes('SC') || category.includes('ST')) allowedAge += 5;
-              if(pwdVal.startsWith('Yes')) allowedAge += 10;
+              if(gov.categoryRelaxable) {
+                if(category.includes('OBC')) allowedAge += 3;
+                if(category.includes('SC') || category.includes('ST')) allowedAge += 5;
+                if(pwdVal.startsWith('Yes')) allowedAge += 10;
+              }
 
               if(age > allowedAge) {
                 isEligible = false;
@@ -1239,6 +1350,7 @@
             const daysRemaining = calculateDaysRemaining(gov.lastDate);
 
             currentScannedResults.push({
+              id: gov.id,
               title: gov.title,
               org: gov.org,
               type: 'Government',
@@ -1249,7 +1361,8 @@
               score: Math.max(matchScore, 30),
               isEligible: isEligible,
               details: statusReasons,
-              meta: `Vacancies: ${gov.vacancies} | Cut-off: ${gov.cutoffDate}`
+              meta: `Vacancies: ${gov.vacancies} | Cut-off: ${gov.cutoffDate}`,
+              syllabus: gov.syllabus
             });
           });
         } else {
@@ -1312,9 +1425,10 @@
         return;
       }
 
-      results.forEach(res => {
+      results.forEach((res, index) => {
         const card = document.createElement('div');
         const scoreColor = res.score >= 80 ? 'text-emerald-600' : (res.score >= 60 ? 'text-amber-600' : 'text-rose-600');
+        const cardId = res.id || `card-${index}`;
         
         // Dynamic Urgency Theme Calculation
         const urgency = getDeadlineUrgencyTheme(res.daysRemaining, res.isActive);
@@ -1325,7 +1439,6 @@
             <div>
               <div class="flex flex-wrap items-center gap-2 mb-1">
                 <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${res.type === 'Government' ? 'bg-amber-100 text-amber-800' : 'bg-brand-100 text-brand-800'}">${res.tag}</span>
-                <!-- Color-Coded Application Deadline Badge -->
                 <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border flex items-center gap-1.5 ${urgency.badgeBg}">
                   <i class="fa-solid ${urgency.icon}"></i> ${urgency.text}
                 </span>
@@ -1351,6 +1464,20 @@
             </div>
             ${res.details.map(d => `<div class="flex items-center gap-2 text-slate-700"><i class="fa-solid fa-angles-right text-[10px] text-slate-400"></i> ${d}</div>`).join('')}
           </div>
+
+          <!-- FEATURE #3: SYLLABUS & PATTERN GUIDE EXPANDABLE BLOCK -->
+          ${res.syllabus ? `
+          <div>
+            <button type="button" onclick="toggleSyllabusView('${cardId}')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+              <i class="fa-solid fa-book-open"></i> View Syllabus & Exam Pattern Guide <i class="fa-solid fa-chevron-down text-[10px]"></i>
+            </button>
+            <div id="syllabus-${cardId}" class="hidden mt-2 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-xs text-indigo-950 space-y-1.5 fade-in">
+              <div><strong class="text-indigo-900">Exam Pattern:</strong> ${res.syllabus.pattern}</div>
+              <div><strong class="text-indigo-900">Core Subjects:</strong> ${res.syllabus.subjects}</div>
+              <div><strong class="text-indigo-900">Negative Marking:</strong> ${res.syllabus.negativeMarking}</div>
+            </div>
+          </div>
+          ` : ''}
 
           <div class="flex items-center justify-between pt-1">
             <span class="px-2.5 py-1 rounded-md text-xs font-bold border ${res.isEligible ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}">
